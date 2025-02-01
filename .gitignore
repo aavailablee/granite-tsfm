@@ -141,3 +141,6 @@ notebooks/thinklab/checkpoint/**
 # Version
 /tsfm_public/_version.py
 **/checkpoint**/**
+
+# tensor board
+tmp*/

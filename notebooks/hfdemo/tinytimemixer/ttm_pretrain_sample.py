@@ -6,6 +6,9 @@ import math
 import os
 import tempfile
 
+import sys
+sys.path.append(os.path.abspath("/home/xiaofuqiang/repo/granite-tsfm"))
+
 import pandas as pd
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import OneCycleLR
@@ -100,6 +103,7 @@ def pretrain(args, model, dset_train, dset_val):
         load_best_model_at_end=True,  # Load the best model when training ends
         metric_for_best_model="eval_loss",  # Metric to monitor for early stopping
         greater_is_better=False,  # For loss
+        disable_tqdm=True,
     )
 
     # Optimizer and scheduler
@@ -158,6 +162,7 @@ def inference(args, model_path, dset_test):
             per_device_eval_batch_size=args.batch_size,
             seed=args.random_seed,
             report_to="none",
+            disable_tqdm=True,
         ),
     )
     # evaluate = zero-shot performance

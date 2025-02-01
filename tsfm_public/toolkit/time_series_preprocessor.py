@@ -557,12 +557,14 @@ class TimeSeriesPreprocessor(FeatureExtractionMixin):
 
         Returns: self
 
+        最主要就是验证和归一化吧
+
         """
 
-        self._check_dataset(dataset)
-        df = self._standardize_dataframe(dataset)
-        self._set_targets(df)
-        self._validate_columns()
+        self._check_dataset(dataset) # 空或者为0报错
+        df = self._standardize_dataframe(dataset) # 如何不是df的，搞出df的
+        self._set_targets(df) # 设置target_colume，如果为空，则取不是其他column的所有列，不会包括timeColumn了
+        self._validate_columns() # 确保几个colume不重合
 
         if self.freq is None:
             self._estimate_frequency(df)
@@ -571,9 +573,9 @@ class TimeSeriesPreprocessor(FeatureExtractionMixin):
             self._train_scaler(df)
 
         if self.encode_categorical:
-            self._train_categorical_encoder(df)
+            self._train_categorical_encoder(df) # staticColumn没使用过的
 
-        self._clean_up_dataframe(df)
+        self._clean_up_dataframe(df) # 清除之前创建过的一个中间列
         return self
 
     def inverse_scale_targets(

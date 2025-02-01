@@ -11,7 +11,11 @@ import numpy as np
 import pandas as pd
 import torch
 
-from .util import join_list_without_repeat
+
+import os
+import sys
+sys.path.append(os.path.abspath("/home/xiaofuqiang/repo/granite-tsfm/tsfm_public/toolkit"))
+from util import join_list_without_repeat
 
 
 LOGGER = logging.getLogger(__file__)
@@ -1013,3 +1017,4 @@ if __name__ == "__main__":
     print(f"d6: {d6}")
 
     d7 = ForecastDFDataset(data_df=df, x_cols=["A", "B"], group_ids=["g1"], seq_len=2, pred_len=2)
+    print(f"d7: {d7}")
