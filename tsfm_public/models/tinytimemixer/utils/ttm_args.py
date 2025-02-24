@@ -72,7 +72,7 @@ def get_ttm_args():
         help="Number of GPUs",
     )
     parser.add_argument("--random_seed", "-rs", type=int, required=False, default=42, help="Random seed")
-    parser.add_argument("--batch_size", "-bs", type=int, required=False, default=3000, help="Batch size")
+    parser.add_argument("--batch_size", "-bs", type=int, required=False, default=100, help="Batch size")
     parser.add_argument(
         "--num_epochs",
         "-ne",
@@ -220,6 +220,8 @@ def get_ttm_args():
         help="head_dropout",
     )
 
+    
+
     # Parsing the arguments
     args = parser.parse_args()
     args.early_stopping = int_to_bool(args.early_stopping)
@@ -227,6 +229,8 @@ def get_ttm_args():
     args.enable_prefix_tuning = int_to_bool(args.enable_prefix_tuning)
     args.d_model = args.patch_length * args.d_model_scale
     args.decoder_d_model = args.patch_length * args.decoder_d_model_scale
+    args.momentum_params = [0.9, 0.99, 0.999] #TODO momentum parameter
+    
 
     # Calculate number of gpus
     if args.num_gpus is None:
@@ -236,7 +240,7 @@ def get_ttm_args():
     # Create save directory
     args.save_dir = os.path.join(
         args.save_dir,
-        f"TTM_cl-{args.context_length}_fl-{args.forecast_length}_pl-{args.patch_length}_apl-{args.adaptive_patching_levels}_ne-{args.num_epochs}_es-{args.early_stopping}",
+        f"TTM_cl-{args.context_length}_fl-{args.forecast_length}_pl-{args.patch_length}_apl-{args.adaptive_patching_levels}_ne-{args.num_epochs}_es-{args.early_stopping}_bs-{args.batch_size}_drop-{args.head_dropout}",
     )
     os.makedirs(args.save_dir, exist_ok=True)
 

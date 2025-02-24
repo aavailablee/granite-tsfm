@@ -210,9 +210,10 @@ if __name__ == "__main__":
     # Data prep
     # Dataset
     TARGET_DATASET = "etth1"
-    dataset_path = (
-        "https://raw.githubusercontent.com/zhouhaoyi/ETDataset/main/ETT-small/ETTh1.csv"  # mention the dataset path
-    )
+    # dataset_path = (
+    #     "https://raw.githubusercontent.com/zhouhaoyi/ETDataset/main/ETT-small/ETTh1.csv"  # mention the dataset path
+    # )
+    dataset_path = "/home/xiaofuqiang/repo/granite-tsfm/notebooks/hfdemo/tinytimemixer/ETTh1.csv"
     timestamp_column = "date"
     id_columns = []  # mention the ids that uniquely identify a time-series.
 
