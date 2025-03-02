@@ -5,6 +5,7 @@
 import argparse
 import logging
 import os
+import time
 
 import torch
 
@@ -238,9 +239,24 @@ def get_ttm_args():
         logger.info(f"Automatically calculated number of GPUs ={args.num_gpus}")
 
     # Create save directory
+    # args.save_dir = os.path.join(
+    #     args.save_dir,
+    #     f"TTM_cl-{args.context_length}_fl-{args.forecast_length}_pl-{args.patch_length}_apl-{args.adaptive_patching_levels}_ne-{args.num_epochs}_es-{args.early_stopping}_bs-{args.batch_size}_drop-{args.head_dropout}",
+    # )
+    # 在代码最前面生成时间戳（推荐在程序启动时获取）
+    timestamp = time.strftime("%Y%m%d-%H%M%S")  # 格式示例：20240615-1630
+
+    # 创建带时间戳的保存目录
     args.save_dir = os.path.join(
         args.save_dir,
-        f"TTM_cl-{args.context_length}_fl-{args.forecast_length}_pl-{args.patch_length}_apl-{args.adaptive_patching_levels}_ne-{args.num_epochs}_es-{args.early_stopping}_bs-{args.batch_size}_drop-{args.head_dropout}",
+        f"{timestamp}_TTM_cl-{args.context_length}"  # 时间戳在最前
+        f"_fl-{args.forecast_length}"
+        f"_pl-{args.patch_length}"
+        f"_apl-{args.adaptive_patching_levels}"
+        f"_ne-{args.num_epochs}"
+        f"_es-{args.early_stopping}"
+        f"_bs-{args.batch_size}"
+        f"_drop-{args.head_dropout}",
     )
     os.makedirs(args.save_dir, exist_ok=True)
 

@@ -26,6 +26,7 @@ from transformers.utils import (
 )
 
 from .configuration_tinytimemixer import TinyTimeMixerConfig
+from .Momentum_batch_learnable import Momentum_batch_learnable
 
 
 logger = logging.get_logger(__name__)
@@ -646,13 +647,13 @@ class ForecastChannelHeadMixer(nn.Module):
             temp_config.num_patches = self.total_channel_count
             temp_config.patch_length = self.scl
             temp_config.num_input_channels = config.prediction_length
-            temp_config.d_model = self.scl * 2
+            temp_config.d_model = self.scl * 2 # 比如 7 -> 14，embedding效果
             temp_config.patch_stride = 1
             temp_config.num_layers = config.fcm_mix_layers
             temp_config.dropout = config.head_dropout
-            temp_config.mode = "common_channel"
+            temp_config.mode = "common_channel" # common not mix, 只有patchLength和hiddenLength没有channelCount的mlp
             temp_config.gated_attn = config.fcm_gated_attn
-            temp_config.adaptive_patching_levels = 0
+            temp_config.adaptive_patching_levels = 0 # 因为已经定义好分块
             self.exog_mixer = TinyTimeMixerBlock(temp_config)
             scl_features = self.scl * 2
             self.fcm_embedding = nn.Linear(temp_config.patch_length, temp_config.d_model)
@@ -765,14 +766,14 @@ class ForecastChannelHeadMixer(nn.Module):
                 # add prefill and postfill
                 extend_forecasts = torch.concat(
                     (past_prepend_values, base_forecasts, dummy), dim=1
-                )  # bs x forecast_len + 2*fcm_context_length x n_vars
+                )  # bs x forecast_len + 2*fcm_context_length x n_vars 比如24 + 2*3
             else:
                 # add prefill and postfill
                 extend_forecasts = torch.concat(
                     (dummy, base_forecasts, dummy), dim=1
                 )  # bs x forecast_len + 2*fcm_context_length x n_vars
 
-            # create patch
+            # create patch, 比如 fcm=3，有bs*vars*24*7，7为patchLength
             extend_forecasts = self.fcm_patch_block(extend_forecasts)  # xb: [bs x n_vars x forecast_len  x scl]
 
             extend_forecasts = extend_forecasts.transpose(1, 2)  # [bs x forecast_len  x n_vars  x scl]
@@ -1601,71 +1602,6 @@ class Momentum(nn.Module):
     def reset_momentum(self):
         self.momentum_matrix = torch.zeros(self.channels, len(self.cfg.momentum_params) * 2 + 1, self.vector_len).to(self.learnable_matrix.device)
 
-class Momentum_batch(nn.Module):
-    def __init__(self, configs, channels, vector_len):
-        super(Momentum_batch, self).__init__()
-        self.cfg = configs
-        self.vector_len = vector_len
-        self.channels = channels
-        self.momentum_matrix = torch.zeros(self.channels, len(self.cfg.momentum_params), vector_len, 1) # channels, 3, vector_len, 1(batch 차원)
-
-        self.batch = configs.batch_size
-        # create multiplication tensor
-        self.mul_tensor = torch.zeros(self.channels, len(configs.momentum_params), self.batch+1, self.batch).to(device='cuda') # channels, 3, B+1, B
-        for idx, coeff in enumerate(configs.momentum_params):
-            for idx_ in range(self.batch+1):
-                for idx__ in range(self.batch):
-                    if idx__+1>=idx_:
-                        self.mul_tensor[:, idx, idx_, idx__] = torch.ones(self.channels) * ((1-coeff)**(1 if idx_>0 else 0)) * (coeff**(idx__+1-idx_ if idx__+1-idx_>=0 else 0))
-                        
-        #TODO if memory low --> convert minimal value to zero and use sparse matrix (in case very large batch)
-
-        temp = torch.zeros(self.channels, len(self.cfg.momentum_params) * 2 + 1, vector_len) # channels, 7, vector_len
-        for idx in range(len(self.cfg.momentum_params) * 2 + 1):
-            temp[:, idx:idx + 1, :] = torch.ones(self.channels, 1, vector_len) * (-(((len(self.cfg.momentum_params) - idx) ** 2) / 4))
-        self.learnable_matrix = nn.Parameter(temp) # channels, 7, vector_len
-
-        self.dropout = nn.Dropout(configs.dropout)
-
-    def forward(self, vector): #TODO input 이제 channel 다 들어옴. vector.shape = (B, channels, vector_len)
-        #* vector B, vector_len 이였음
-        batch = vector.shape[0]
-        vector = vector.permute(1,0,2) # channels, B, vector_len
-
-        # TODO if vector batch is not batchsize (last batch)
-        # Ensure that the momentum_matrix is initialized correctly
-        N = len(self.cfg.momentum_params)
-        if torch.all(self.momentum_matrix == 0):
-            with torch.no_grad():
-                self.momentum_matrix = vector[:,0:1,:,None].expand_as(self.momentum_matrix) # channels, 3(이게 expand), vector_len, 1(batch 차원)
-
-        # lhs.shape = (channels, 3, vector_len, batch+1) 
-        lhs = torch.cat((self.momentum_matrix.detach(), vector.permute(0,2,1).unsqueeze(1).expand(self.channels, N, self.vector_len, batch)), dim=3) 
-        if batch == self.batch:
-            out = torch.matmul(lhs, self.mul_tensor.detach()) # out.shape = channels, 3, vector_len, batch
-        else:
-            out = torch.matmul(lhs, self.mul_tensor.detach()[:, :, :batch+1, :batch])  # out.shape = channels, 3, vector_len, batch
-
-        out = torch.cat((self.momentum_matrix, out), dim=3)    # channels, 3, vector_len , batch+1
-        self.momentum_matrix = out[:,:,:,-1:].clone().detach() # channels, 3, vector_len, 1
-        out = out[:,:,:,:-1] # channels, 3, vector_len, batch
-        if not self.cfg.bptt:
-            out = out.detach()
-
-        matrix = torch.softmax(self.learnable_matrix, dim=1)  # channels, 7, vector_len
-
-        matrix_1 = 2*(matrix[:,N+1:,:] - torch.flip(matrix[:,:N,:], (1,))) # channels, 3, vector_len
-        matrix_2 = 2*torch.sum(matrix[:,:N,:], dim=1, keepdim=True) + matrix[:,N:N+1,:] # channels, 1, vector_len
-
-        # Combine the updated momentum_matrix with the learnable_matrix to produce the final vector
-        vector = torch.transpose(torch.mul(matrix_1.unsqueeze(3), out).sum(dim=1), 1, 2) + torch.mul(matrix_2, vector) # channels, batch, vector_len
-
-        # vector = self.dropout(vector)
-        return torch.transpose(vector, 0, 1) # batch, channels, vector_len
-
-    def reset_momentum(self):
-        self.momentum_matrix = torch.zeros(self.channels, len(self.cfg.momentum_params), self.vector_len, 1).to(self.learnable_matrix.device)
-        self.mul_tensor = self.mul_tensor.to(self.learnable_matrix.device)
 
 @add_start_docstrings(
     "The TinyTimeMixer Model for time-series forecasting.",
@@ -1679,7 +1615,8 @@ class TinyTimeMixerModel(TinyTimeMixerPreTrainedModel):
         super().__init__(config)
 
         self.use_return_dict = config.use_return_dict
-        self.momentum = Momentum_batch(config, 7, config.context_length)
+        self.momentum = Momentum_batch_learnable(config, 7, config.context_length)
+        # self.momentum = Momentum_batch(config, 7, config.context_length)
         self.encoder = TinyTimeMixerEncoder(config)
         self.patching = TinyTimeMixerPatchify(config)
 
@@ -1718,13 +1655,16 @@ class TinyTimeMixerModel(TinyTimeMixerPreTrainedModel):
         """
         return_dict = return_dict if return_dict is not None else self.use_return_dict
 
-        past_values = past_values.permute(0,2,1)
-        past_values = self.momentum(past_values)
-        past_values = past_values.permute(0,2,1)
+        # past_values = past_values.permute(0,2,1)
+        # past_values = self.momentum(past_values)
+        # past_values = past_values.permute(0,2,1)
 
         if past_observed_mask is None:
             past_observed_mask = torch.ones_like(past_values)
         scaled_past_values, loc, scale = self.scaler(past_values, past_observed_mask)
+        scaled_past_values = scaled_past_values.permute(0,2,1)
+        scaled_past_values = self.momentum(scaled_past_values)
+        scaled_past_values = scaled_past_values.permute(0,2,1)
 
         patched_x = self.patching(scaled_past_values)  # [batch_size x num_input_channels x num_patch x patch_length
 

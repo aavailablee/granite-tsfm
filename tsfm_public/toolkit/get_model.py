@@ -177,6 +177,28 @@ def get_model(
             prediction_filter_length = prediction_length
 
         # Load model
+        # model = TinyTimeMixerForPrediction.from_pretrained(
+        #     model_path,
+        #     revision=ttm_model_revision,
+        #     prediction_filter_length=prediction_filter_length,
+        #     **kwargs,
+        # )
+        model = TinyTimeMixerForPrediction.from_pretrained(
+            model_path,
+            local_files_only=True,
+            use_safetensors=True,
+            prediction_filter_length=prediction_filter_length,
+            **kwargs,
+        )
+
+        LOGGER.info("Model loaded successfully!")
+        LOGGER.info(
+            f"[TTM] context_len = {model.config.context_length}, forecast_len = {model.config.prediction_length}"
+        )
+    else:
+        raise ValueError("Currently supported values for `model_name` = 'ttm'.")
+        LOGGER.info("Model not on Internet")
+        # Load model
         model = TinyTimeMixerForPrediction.from_pretrained(
             model_path,
             revision=ttm_model_revision,
@@ -188,7 +210,7 @@ def get_model(
         LOGGER.info(
             f"[TTM] context_len = {model.config.context_length}, forecast_len = {model.config.prediction_length}"
         )
-    else:
-        raise ValueError("Currently supported values for `model_name` = 'ttm'.")
+
 
     return model
+
