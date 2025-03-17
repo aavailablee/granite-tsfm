@@ -143,5 +143,10 @@ notebooks/thinklab/checkpoint/**
 **/checkpoint**/**
 
 # tensor board
+
+
+# else
 tmp*/
 temp/
+*.pdf
+ttm_finetuned_models/

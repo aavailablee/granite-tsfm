@@ -33,8 +33,8 @@ SEED = 42
 set_seed(SEED)
 
 # TTM Model path. The default model path is Granite-R2. Below, you can choose other TTM releases.
-TTM_MODEL_PATH = "/home/xiaofuqiang/repo/granite-tsfm/notebooks/hfdemo/tinytimemixer/tmp/TTM_cl-48_fl-24_pl-10_apl-0_ne-100_es-False_bs-64_noMomentum-02/ttm_pretrained"
-# TTM_MODEL_PATH = "/home/xiaofuqiang/repo/granite-tsfm/notebooks/hfdemo/tinytimemixer/tmp/20250228-092742_TTM_cl-48_fl-24_pl-10_apl-0_ne-100_es-False_bs-64_drop-0.2/ttm_pretrained"
+# TTM_MODEL_PATH = "/home/xiaofuqiang/repo/granite-tsfm/notebooks/hfdemo/tinytimemixer/tmp/TTM_cl-48_fl-24_pl-10_apl-0_ne-100_es-False_bs-64_noMomentum-02/ttm_pretrained"
+TTM_MODEL_PATH = "/home/xiaofuqiang/repo/granite-tsfm/notebooks/hfdemo/tinytimemixer/tmp/20250228-092742_TTM_cl-48_fl-24_pl-10_apl-0_ne-100_es-False_bs-64_drop-0.2/ttm_pretrained"
 
 
 
@@ -315,3 +315,21 @@ fewshot_finetune_eval(
     fewshot_percent=5,
     learning_rate=0.001,
 )
+
+# fewshot_finetune_eval(
+#     dataset_name=TARGET_DATASET,
+#     context_length=CONTEXT_LENGTH,
+#     forecast_length=PREDICTION_LENGTH,
+#     batch_size=64,
+#     fewshot_percent=50,
+#     learning_rate=0.001,
+# )
+
+# fewshot_finetune_eval(
+#     dataset_name=TARGET_DATASET,
+#     context_length=CONTEXT_LENGTH,
+#     forecast_length=PREDICTION_LENGTH,
+#     batch_size=64,
+#     fewshot_percent=100,
+#     learning_rate=0.001,
+# )

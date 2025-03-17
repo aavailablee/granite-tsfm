@@ -25,6 +25,9 @@ from tsfm_public.toolkit.lr_finder import optimal_lr_finder
 from tsfm_public.toolkit.visualization import plot_predictions
 
 
+from data_provider.data_factory import data_provider
+
+
 logger = logging.getLogger(__file__)
 
 # TTM pre-training example.
@@ -47,7 +50,7 @@ def get_base_model(args):
         context_length=args.context_length,
         prediction_length=args.forecast_length,
         patch_length=args.patch_length,
-        num_input_channels=1,
+        num_input_channels=7,
         patch_stride=args.patch_length,
         d_model=args.d_model,
         num_layers=args.num_layers,  # increase the number of layers if we want more complex models
@@ -207,39 +210,40 @@ if __name__ == "__main__":
         f"{'*' * 20} Pre-training a TTM for context len = {args.context_length}, forecast len = {args.forecast_length} {'*' * 20}"
     )
 
+    data, split_config, column_specifiers = data_provider(args, flag="train")
     # Data prep
     # Dataset
-    TARGET_DATASET = "etth1"
+    # TARGET_DATASET = "etth1" args,dataset有
     # dataset_path = (
     #     "https://raw.githubusercontent.com/zhouhaoyi/ETDataset/main/ETT-small/ETTh1.csv"  # mention the dataset path
     # )
-    dataset_path = "/home/xiaofuqiang/repo/granite-tsfm/notebooks/hfdemo/tinytimemixer/ETTh1.csv"
-    timestamp_column = "date"
-    id_columns = []  # mention the ids that uniquely identify a time-series.
+    # dataset_path = "/home/xiaofuqiang/repo/granite-tsfm/notebooks/hfdemo/tinytimemixer/ETTh1.csv"
+    # timestamp_column = "date"
+    # id_columns = []  # mention the ids that uniquely identify a time-series.
 
-    target_columns = ["HUFL", "HULL", "MUFL", "MULL", "LUFL", "LULL", "OT"]
+    # target_columns = ["HUFL", "HULL", "MUFL", "MULL", "LUFL", "LULL", "OT"]
 
-    # mention the train, valid and split config.
-    split_config = {
-        "train": [0, 8640],
-        "valid": [8640, 11520],
-        "test": [
-            11520,
-            14400,
-        ],
-    }
+    # # mention the train, valid and split config.
+    # split_config = {
+    #     "train": [0, 8640],
+    #     "valid": [8640, 11520],
+    #     "test": [
+    #         11520,
+    #         14400,
+    #     ],
+    # }
 
-    data = pd.read_csv(
-        dataset_path,
-        parse_dates=[timestamp_column],
-    )
+    # data = pd.read_csv(
+    #     dataset_path,
+    #     parse_dates=[timestamp_column],
+    # )
 
-    column_specifiers = {
-        "timestamp_column": timestamp_column,
-        "id_columns": id_columns,
-        "target_columns": target_columns,
-        "control_columns": [],
-    }
+    # column_specifiers = {
+    #     "timestamp_column": timestamp_column,
+    #     "id_columns": id_columns,
+    #     "target_columns": target_columns,
+    #     "control_columns": [],
+    # }
 
     tsp = TimeSeriesPreprocessor(
         **column_specifiers,

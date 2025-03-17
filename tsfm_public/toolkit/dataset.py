@@ -585,6 +585,8 @@ class ForecastDFDataset(BaseConcatDFDataset):
 
         def __getitem__(self, index):
             # seq_x: batch_size x seq_len x num_x_cols
+
+            # todo 加入labelLen试试
             index = self._check_index(index)
 
             time_id = index * self.stride

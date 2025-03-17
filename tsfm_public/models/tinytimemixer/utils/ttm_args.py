@@ -249,14 +249,15 @@ def get_ttm_args():
     # 创建带时间戳的保存目录
     args.save_dir = os.path.join(
         args.save_dir,
-        f"{timestamp}_TTM_cl-{args.context_length}"  # 时间戳在最前
+        f"{timestamp}_Test_cl-{args.context_length}"  # 时间戳在最前
         f"_fl-{args.forecast_length}"
         f"_pl-{args.patch_length}"
         f"_apl-{args.adaptive_patching_levels}"
         f"_ne-{args.num_epochs}"
-        f"_es-{args.early_stopping}"
-        f"_bs-{args.batch_size}"
-        f"_drop-{args.head_dropout}",
+        # f"_es-{args.early_stopping}"
+        # f"_bs-{args.batch_size}"
+        # f"_drop-{args.head_dropout}"
+        ,
     )
     os.makedirs(args.save_dir, exist_ok=True)
 

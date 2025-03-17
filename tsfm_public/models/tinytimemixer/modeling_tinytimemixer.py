@@ -1496,22 +1496,22 @@ class TinyTimeMixerEncoder(TinyTimeMixerPreTrainedModel):
         # flatten [bs x num_patch x d_model]. common_channel/mix_channel: [bs x n_vars x num_patch x d_model]
         patches = self.patcher(past_values)
 
-        if self.resolution_prefix_tuning:
-            if freq_token is not None:
-                freq_embedding = self.freq_mod(freq_token.long())  # bs x d_model
+        # if self.resolution_prefix_tuning:
+        #     if freq_token is not None:
+        #         freq_embedding = self.freq_mod(freq_token.long())  # bs x d_model
 
-                freq_embedding = freq_embedding.view(patches.shape[0], 1, 1, self.d_model)
-                freq_embedding = freq_embedding.expand(
-                    patches.shape[0],
-                    patches.shape[1],
-                    1,
-                    self.d_model,
-                )  # bs x channels x 1 x num_features
+        #         freq_embedding = freq_embedding.view(patches.shape[0], 1, 1, self.d_model)
+        #         freq_embedding = freq_embedding.expand(
+        #             patches.shape[0],
+        #             patches.shape[1],
+        #             1,
+        #             self.d_model,
+        #         )  # bs x channels x 1 x num_features
 
-                patches = torch.cat((freq_embedding, patches), dim=-2)  # bs x channels x num_patch+1 x num_features
+        #         patches = torch.cat((freq_embedding, patches), dim=-2)  # bs x channels x num_patch+1 x num_features
 
-            else:
-                raise Exception("Expecting freq_token in forward")
+        #     else:
+        #         raise Exception("Expecting freq_token in forward")
 
         # add positional encoder
         if self.positional_encoder is not None:

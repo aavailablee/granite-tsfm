@@ -135,9 +135,9 @@ def zeroshot_eval(dataset_name, batch_size, context_length=48, forecast_length=2
         model=zeroshot_trainer.model,
         dset=dset_test,
         plot_dir=os.path.join(OUT_DIR, dataset_name),
-        plot_prefix="test_zeroshot",
+        plot_prefix="test_zeroshot6",
         indices=[685, 118, 902, 1984, 894, 967, 304, 57, 265, 1015],
-        channel=0,
+        channel=6,
     )
 
 zeroshot_eval(
