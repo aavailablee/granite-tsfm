@@ -18,43 +18,39 @@ label_len, 加点数据通常时pred的1/3~1/2，可使预测误差降低20%-40%
 '''
 
 '''
-1. Specify train/valid/test indices or relative fractions
+1. Specify train/valid/test indices or relative fractions，不行
 {
     train: [0, 50],
     valid: [50, 70],
     test:  [70, 100]
 }
 end value is not inclusive
-2. Specify train/test fractions:
+2. Specify train/test fractions:， 不行
 {
     train: 0.7
     test: 0.2
 }
+
+split_config = {
+    "train": [0, 8640],
+    "valid": [8640, 11520],
+    "test": [
+        11520,
+        14400,
+    ],
+}
+or 下面这个是因为数据集不只有14400个才不一致
+split_config = {
+    "train": [0, 0.6],
+    "valid": [0.6, 0.8],
+    "test": [
+        0.8,
+        1,
+    ],
+}
 '''
 def data_provider(args):
-    # args.dataset
-    
     if args.dataset == 'etth1':
-        # data = pd.read_csv(args.root_path + args.data_path) # todo 这里拿绝对地址卡死
-        dataset_path = "/home/xiaofuqiang/repo/granite-tsfm/notebooks/hfdemo/tinytimemixer/ETTh1.csv"
-        data = pd.read_csv(
-            dataset_path,
-            parse_dates=[timestamp_column],
-        )
-        # split_config = {
-        #     'train': [0, 0.7],
-        #     'val': [0.7, 0.9],
-        #     'test': [0.9, 1]
-        # }
-        # mention the train, valid and split config.
-        split_config = {
-            "train": [0, 8640],
-            "valid": [8640, 11520],
-            "test": [
-                11520,
-                14400,
-            ],
-        }
         timestamp_column = "date"
         id_columns = []  # mention the ids that uniquely identify a time-series. 比如自增列，最后会删去的
         target_columns = ["HUFL", "HULL", "MUFL", "MULL", "LUFL", "LULL", "OT"]
@@ -64,26 +60,21 @@ def data_provider(args):
             "target_columns": target_columns,
             "control_columns": [],
         }
+        # data = pd.read_csv(args.root_path + args.data_path) # todo 这里拿绝对地址卡死
+        dataset_path = "/home/xiaofuqiang/all_six_datasets/ETT-small/ETTh1.csv"
+        data = pd.read_csv(
+            dataset_path,
+            parse_dates=[timestamp_column],
+        )
+        # mention the train, valid and split config.
+        split_config = {
+            "train": [0, 8640],
+            "valid": [8640, 11520],
+            "test": [
+                11520,
+                14400,
+            ],
+        }
     else:
         raise NotImplementedError
-
-    # Data = data_dict[args.data]
-    # todo 可以试试效果
-    timeenc = 0 if args.embed != 'timeF' else 1
-    # train_only = args.train_only
-
-    # 不用去获取getItem，后面有
-    # data_set = Data(
-    #     root_path=args.root_path,
-    #     data_path=args.data_path,
-    #     flag=flag,
-    #     # size=[args.seq_len, args.label_len, args.pred_len],
-    #     size=[args.seq_len, 0, args.pred_len],
-    #     features=args.features,
-    #     target=args.target,
-    #     timeenc=timeenc,
-    #     freq=freq,
-    #     train_only=train_only
-    # # )
-    # print(flag, len(data_set))
     return data, split_config, column_specifiers
