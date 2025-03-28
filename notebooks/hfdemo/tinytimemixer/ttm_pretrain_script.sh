@@ -8,4 +8,6 @@ python ttm_pretrain_sample.py  --context_length 48 \
                                --head_dropout 0.2 \
                                --early_stopping 0 \
                                --adaptive_patching_levels 0 \
-                               --num_epochs 100
+                               --num_epochs 100 \
+                               --dataset etth1
+                               > ./logs/ttm_pretrain_etth2.log 2>&1

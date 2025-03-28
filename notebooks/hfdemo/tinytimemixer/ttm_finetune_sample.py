@@ -154,6 +154,7 @@ def fewshot_finetune_eval(
     save_dir=OUT_DIR,
     loss="mse",
     quantile=0.5,
+    decoderMode="common_channel",
 ):
     out_dir = os.path.join(save_dir, dataset_name)
 
@@ -193,6 +194,9 @@ def fewshot_finetune_eval(
             quantile=quantile,
         )
 
+    # 这里没效果，还都是eval_loss': 0.30339550971984863
+    # 但是至少比train+10epoch更加好些？是的，110甚至是{'eval_loss': 0.3064977526664734, 'eval_model_preparation_time': 0.0012, 'eval_runtime': 0.503, 'eval_samples_per_second': 5679.901, 'eval_steps_per_second': 89.463}
+    finetune_forecast_model.config.decoder_mode = decoderMode
     if freeze_backbone:
         print(
             "Number of params before freezing backbone",
@@ -303,8 +307,18 @@ def fewshot_finetune_eval(
         channel=0,
     )
 
-zeroshot_eval(
-    dataset_name=TARGET_DATASET, context_length=CONTEXT_LENGTH, forecast_length=PREDICTION_LENGTH, batch_size=64
+# zeroshot_eval(
+#     dataset_name=TARGET_DATASET, context_length=CONTEXT_LENGTH, forecast_length=PREDICTION_LENGTH, batch_size=64
+# )
+
+fewshot_finetune_eval(
+    dataset_name=TARGET_DATASET,
+    context_length=CONTEXT_LENGTH,
+    forecast_length=PREDICTION_LENGTH,
+    batch_size=64,
+    fewshot_percent=5,
+    learning_rate=0.001,
+    decoderMode="common_channel",
 )
 
 fewshot_finetune_eval(
@@ -314,6 +328,7 @@ fewshot_finetune_eval(
     batch_size=64,
     fewshot_percent=5,
     learning_rate=0.001,
+    decoderMode="mix_channel",
 )
 
 # fewshot_finetune_eval(

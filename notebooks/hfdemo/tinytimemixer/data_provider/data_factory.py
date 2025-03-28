@@ -75,6 +75,81 @@ def data_provider(args):
                 14400,
             ],
         }
+    elif args.dataset == 'etth2':
+        timestamp_column = "date"
+        id_columns = []  # mention the ids that uniquely identify a time-series. 比如自增列，最后会删去的
+        target_columns = ["HUFL", "HULL", "MUFL", "MULL", "LUFL", "LULL", "OT"]
+        column_specifiers = {
+            "timestamp_column": timestamp_column,
+            "id_columns": id_columns,
+            "target_columns": target_columns,
+            "control_columns": [],
+        }
+        # data = pd.read_csv(args.root_path + args.data_path) # todo 这里拿绝对地址卡死
+        dataset_path = "/home/xiaofuqiang/all_six_datasets/ETT-small/ETTh2.csv"
+        data = pd.read_csv(
+            dataset_path,
+            parse_dates=[timestamp_column],
+        )
+        # mention the train, valid and split config.
+        split_config = {
+            "train": [0, 8640],
+            "valid": [8640, 11520],
+            "test": [
+                11520,
+                14400,
+            ],
+        }
+    elif args.dataset == 'ettm1':
+        timestamp_column = "date"
+        id_columns = []  # mention the ids that uniquely identify a time-series. 比如自增列，最后会删去的
+        target_columns = ["HUFL", "HULL", "MUFL", "MULL", "LUFL", "LULL", "OT"]
+        column_specifiers = {
+            "timestamp_column": timestamp_column,
+            "id_columns": id_columns,
+            "target_columns": target_columns,
+            "control_columns": [],
+        }
+        # data = pd.read_csv(args.root_path + args.data_path) # todo 这里拿绝对地址卡死
+        dataset_path = "/home/xiaofuqiang/all_six_datasets/ETT-small/ETTm1.csv"
+        data = pd.read_csv(
+            dataset_path,
+            parse_dates=[timestamp_column],
+        )
+        # mention the train, valid and split config.
+        split_config = {
+            "train": [0, 12*30*24*4],
+            "valid": [12*30*24*4, 16*30*24*4],
+            "test": [
+                16*30*24*4,
+                20*30*24*4,
+            ],
+        }
+    elif args.dataset == 'ettm2':
+        timestamp_column = "date"
+        id_columns = []  # mention the ids that uniquely identify a time-series. 比如自增列，最后会删去的
+        target_columns = ["HUFL", "HULL", "MUFL", "MULL", "LUFL", "LULL", "OT"]
+        column_specifiers = {
+            "timestamp_column": timestamp_column,
+            "id_columns": id_columns,
+            "target_columns": target_columns,
+            "control_columns": [],
+        }
+        # data = pd.read_csv(args.root_path + args.data_path) # todo 这里拿绝对地址卡死
+        dataset_path = "/home/xiaofuqiang/all_six_datasets/ETT-small/ETTm2.csv"
+        data = pd.read_csv(
+            dataset_path,
+            parse_dates=[timestamp_column],
+        )
+        # mention the train, valid and split config.
+        split_config = {
+            "train": [0, 12*30*24*4],
+            "valid": [12*30*24*4, 16*30*24*4],
+            "test": [
+                16*30*24*4,
+                20*30*24*4,
+            ],
+        }
     else:
         raise NotImplementedError
     return data, split_config, column_specifiers

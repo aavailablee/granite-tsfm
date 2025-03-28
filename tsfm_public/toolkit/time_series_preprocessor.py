@@ -428,7 +428,7 @@ class TimeSeriesPreprocessor(FeatureExtractionMixin):
         return cols_to_encode
 
     def _train_scaler(self, df: pd.DataFrame):
-        cols_to_scale = self._get_other_columns_to_scale()
+        cols_to_scale = self._get_other_columns_to_scale() # observable_columns, control_columns, conditional_columns
         scaler_class = self._get_scaler_class(self.scaler_type)
 
         for name, g in self._get_groups(df):
@@ -562,21 +562,21 @@ class TimeSeriesPreprocessor(FeatureExtractionMixin):
         """
 
         self._check_dataset(dataset) # 空或者为0报错
-        df = self._standardize_dataframe(dataset) # 如何不是df的，搞出df的
-        self._set_targets(df) # 设置target_colume，如果为空，则取不是其他column的所有列，不会包括timeColumn了
+        df = self._standardize_dataframe(dataset) # 如果不是df，搞出df的
+        self._set_targets(df) # 不为空无事发生，如果为空，则自动设置
         self._validate_columns() # 确保几个colume不重合
 
-        if self.freq is None:
+        if self.freq is None: # 给个freq，用两个timestamp相减
             self._estimate_frequency(df)
 
-        if self.scaling:
+        if self.scaling: # 只设置个scaler，计算均值标准差（还有方差），这里不归一化
             self._train_scaler(df)
 
-        if self.encode_categorical:
+        if self.encode_categorical: # 类别编码
             self._train_categorical_encoder(df) # staticColumn没使用过的
 
-        self._clean_up_dataframe(df) # 清除之前创建过的一个中间列
-        return self
+        self._clean_up_dataframe(df) # 清除之前创建过的一个索引列
+        return self # self没变过，初始化和设置几个内部变量值
 
     def inverse_scale_targets(
         self, dataset: Union[Dataset, pd.DataFrame], suffix: Optional[str] = None
@@ -646,8 +646,8 @@ class TimeSeriesPreprocessor(FeatureExtractionMixin):
         self._check_dataset(dataset)
         df = self._standardize_dataframe(dataset)
 
-        if self.scaling:
-            other_cols_to_scale = self._get_other_columns_to_scale()
+        if self.scaling: # 这里做真正的归一化
+            other_cols_to_scale = self._get_other_columns_to_scale() # 就是train里的colsToScale
 
             if self.scaling and len(self.target_scaler_dict) == 0:
                 # trying to get output, but we never trained the scaler
@@ -857,7 +857,7 @@ def get_datasets(
         split_config=split_config,
     )
 
-    # data preprocessing
+    # data preprocessing 初始化和设置一些内部值
     ts_preprocessor.train(train_data)
 
     # specify columns
@@ -871,7 +871,7 @@ def get_datasets(
         "static_categorical_columns": ts_preprocessor.static_categorical_columns,
     }
 
-    # handle fewshot operation
+    # handle fewshot operation 拿切片
     if (fewshot_fraction is not None) and not ((fewshot_fraction <= 1.0) and (fewshot_fraction > 0.0)):
         raise ValueError(f"Fewshot fraction should be between 0 and 1, received {fewshot_fraction}")
     if fewshot_fraction is not None and fewshot_location != FractionLocation.UNIFORM.value:
@@ -895,6 +895,7 @@ def get_datasets(
     train_valid_test = [train_data, valid_data, test_data]
     train_valid_test_prep = [ts_preprocessor.preprocess(d) for d in train_valid_test]
 
+    # 这里定义exogenous columns
     if as_univariate and len(ts_preprocessor.target_columns) > 1:
         if (
             ts_preprocessor.observable_columns
@@ -904,6 +905,7 @@ def get_datasets(
         ):
             raise ValueError("`as_univariate` option only allowed when there are no exogenous columns.")
 
+        # 作melt操作，也就是将多列变2列大概是，两列就是key、value
         train_valid_test_prep = [
             convert_to_univariate(
                 d,
@@ -919,6 +921,9 @@ def get_datasets(
 
     params.update(**dataset_kwargs)
 
+    # 在上部，基础就是创建scaler、对数据进行scaler。其他就是放屁
+    # 下面就是创建dataset，ForecastDFDataset最终是调用内部类里的getItem
+    # params: {'id_columns': [], 'timestamp_column': 'date', 'target_columns': ['HUFL', 'HULL', 'MUFL', 'MULL', 'LUFL', 'LULL', 'OT'], 'observable_columns': [], 'control_columns': [], 'conditional_columns': [], 'static_categorical_columns': [], 'context_length': 512, 'prediction_length': 96, 'stride': 1, 'enable_padding': True}
     datasets = tuple([ForecastDFDataset(d, **params) for d in train_valid_test_prep])
     for dset_name, dset in zip(["train", "valid", "test"], datasets):
         if len(dset) == 0:

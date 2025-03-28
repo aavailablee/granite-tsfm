@@ -110,6 +110,7 @@ def select_by_index(
     if not id_columns:
         return _split_group_by_index(df, start_index=start_index, end_index=end_index).copy()
 
+    # 如果指定了id_columns，则按分组对每个组进行切片，最后将结果合并。
     groups = df.groupby(_get_groupby_columns(id_columns))
     result = []
     for name, group in groups:
