@@ -9,5 +9,5 @@ python ttm_pretrain_sample.py  --context_length 48 \
                                --early_stopping 0 \
                                --adaptive_patching_levels 0 \
                                --num_epochs 100 \
-                               --dataset etth1
-                               > ./logs/ttm_pretrain_etth2.log 2>&1
+                               --dataset etth1 \
+                               > ./logs/ttm_pretrain_etth1_250329_noScaler.log 2>&1

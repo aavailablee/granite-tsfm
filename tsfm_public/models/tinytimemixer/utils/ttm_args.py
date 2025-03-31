@@ -259,7 +259,7 @@ def get_ttm_args():
         # f"_drop-{args.head_dropout}"
         ,
     )
-    # os.makedirs(args.save_dir, exist_ok=True)
+    os.makedirs(args.save_dir, exist_ok=True)
 
     return args
 

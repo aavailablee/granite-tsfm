@@ -226,7 +226,7 @@ if __name__ == "__main__":
     # Get model
     model = get_base_model(args)
 
-    # Pretrain
+    # Pretrain，本来就是调用Trainer，只要dataset是getItem的都行，管你自定义什么臭x gun！
     model_save_path = pretrain(args, model, dset_train, dset_valid)
     print("=" * 20, "Pretraining Completed!", "=" * 20)
     print("Model saved in location:", model_save_path)

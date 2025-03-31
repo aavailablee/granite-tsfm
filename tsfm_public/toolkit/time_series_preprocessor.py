@@ -894,6 +894,7 @@ def get_datasets(
     # get torch datasets
     train_valid_test = [train_data, valid_data, test_data]
     train_valid_test_prep = [ts_preprocessor.preprocess(d) for d in train_valid_test]
+    # train_valid_test_prep = train_valid_test
 
     # 这里定义exogenous columns
     if as_univariate and len(ts_preprocessor.target_columns) > 1:
