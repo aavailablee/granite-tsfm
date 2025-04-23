@@ -68,6 +68,9 @@ def get_base_model(args):
         decoder_raw_residual=False,
         use_decoder=True,
         decoder_d_model=args.decoder_d_model,
+        loss=args.loss,
+
+        enc_in=args.enc_in,
     )
 
     model = TinyTimeMixerForPrediction(config)

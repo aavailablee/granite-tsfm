@@ -21,7 +21,7 @@ def get_ttm_args():
         "-fl",
         type=int,
         required=False,
-        default=96,
+        default=24,
         help="Forecast length",
     )
     parser.add_argument(
@@ -29,7 +29,7 @@ def get_ttm_args():
         "-cl",
         type=int,
         required=False,
-        default=512,
+        default=48,
         help="History context length",
     )
     parser.add_argument(
@@ -37,7 +37,7 @@ def get_ttm_args():
         "-pl",
         type=int,
         required=False,
-        default=64,
+        default=6,
         help="Patch length",
     )
     parser.add_argument(
@@ -104,7 +104,7 @@ def get_ttm_args():
         "-ds",
         type=str,
         required=False,
-        default="etth1",
+        default="traffic",
         help="Dataset",
     )
     parser.add_argument(
@@ -219,6 +219,22 @@ def get_ttm_args():
         required=False,
         default=0.2,
         help="head_dropout",
+    )
+
+    parser.add_argument(
+        "--enc_in",
+        type=float,
+        required=False,
+        default=7,
+        help="enc_in",
+    )
+
+    parser.add_argument(
+        "--loss",
+        type=str,
+        required=False,
+        default="mse",
+        help="loss",
     )
 
     
