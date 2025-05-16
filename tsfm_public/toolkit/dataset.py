@@ -14,7 +14,7 @@ import torch
 
 import os
 import sys
-sys.path.append(os.path.abspath("/home/xiaofuqiang/repo/granite-tsfm/tsfm_public/toolkit"))
+sys.path.append(os.path.abspath("/opt/data/private/model_test/granite-tsfm/tsfm_public/toolkit"))
 from util import join_list_without_repeat
 
 

@@ -6,14 +6,12 @@ class Momentum_batch_learnable(nn.Module):
         super(Momentum_batch_learnable, self).__init__()
         self.cfg = configs
         self.vector_len = vector_len #F
-        # self.register_buffer('momentum_matrix', torch.zeros(len(self.cfg.momentum_params) * 2 + 1, vector_len))
         self.momentum_matrix = torch.zeros(channels, len(self.cfg.momentum_params), vector_len, 1) #C, 3, F, 1
         self.momentum_len = self.cfg.momentum_params
         self.channels = channels
 
         self.batch = configs.batch_size
         # create multiplication tensor
-        #self.mul_tensor = torch.zeros(len(configs.momentum_params), self.batch+1, self.batch) # 3, B+1, B
         momentum_params = torch.asarray(configs.momentum_params) # 3
         momentum_params = momentum_params.unsqueeze(0).repeat(channels, 1) # C, 3
         momentum_params_learnable = torch.log(torch.div(momentum_params,(1-momentum_params))) # C, 3

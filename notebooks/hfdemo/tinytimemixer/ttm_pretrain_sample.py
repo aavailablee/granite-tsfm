@@ -7,7 +7,7 @@ import os
 import tempfile
 
 import sys
-sys.path.append(os.path.abspath("/home/xiaofuqiang/repo/granite-tsfm"))
+sys.path.append(os.path.abspath("/opt/data/private/model_test/granite-tsfm"))
 
 import pandas as pd
 from torch.optim import AdamW

@@ -61,7 +61,7 @@ def data_provider(args):
             "control_columns": [],
         }
         # data = pd.read_csv(args.root_path + args.data_path) # todo 这里拿绝对地址卡死
-        dataset_path = "/home/xiaofuqiang/all_six_datasets/ETT-small/ETTh1.csv"
+        dataset_path = "/opt/data/private/model_test/dataset/all_six_datasets/ETT-small/ETTh1.csv"
         # dataset_path = "/home/xiaofuqiang/all_six_datasets/ETT-small/ETTh1_modified30.csv"
         data = pd.read_csv(
             dataset_path,
@@ -162,7 +162,7 @@ def data_provider(args):
             "target_columns": target_columns,
             "control_columns": [],
         }
-        dataset_path = "/home/xiaofuqiang/all_six_datasets/traffic/traffic.csv"
+        dataset_path = "/opt/data/private/model_test/dataset/all_six_datasets/traffic/traffic.csv"
         data = pd.read_csv(
             dataset_path,
             parse_dates=[timestamp_column],

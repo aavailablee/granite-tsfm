@@ -1,0 +1,1 @@
+nohup sh ttm_pretrain_script.sh > ./logs/ttm_pretrain_nohup.log 2>&1 &
