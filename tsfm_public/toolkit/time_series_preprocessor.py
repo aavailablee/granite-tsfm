@@ -840,6 +840,48 @@ def get_datasets(
     Returns:
         Tuple of pytorch datasets, including: train, validation, test.
     """
+    # if dataset == None:
+    #     scaler = init_scaler("standard")
+    #     dataloaders = {}
+    #     transformer = AttrMapper()
+    #     id_transformer = BSIDMapper()
+    #     cfg = {
+    #         "dataset": {
+    #             "have_weather_forecast": False,
+    #             "data_path": "../dataset/all_ice/",
+                
+    #         },
+    #         "batch_size": 64,
+    #         "num_workers": 1,
+    #     }
+    #     class obj(object):
+    #         def __init__(self, d):
+    #             for k, v in d.items():
+    #                 if isinstance(k, (list, tuple)):
+    #                     setattr(
+    #                         self,
+    #                         k,
+    #                         [obj(x) if isinstance(x, dict) else x for x in v],
+    #                     )
+    #                 else:
+    #                     setattr(self, k, obj(v) if isinstance(v, dict) else v)
+    #     cfg = obj(cfg)
+    #     for category in ["train", "valid", "test"]:
+    #         dataset = Ice(cfg.dataset, category, transformer, id_transformer,scaler)
+    #         dataloaders[category] = DataLoader(
+    #             dataset,
+    #             batch_size=cfg.batch_size,
+    #             shuffle=True if category == "train" else False,
+    #             num_workers=cfg.num_workers,
+    #         )
+    #         if category == "test":
+    #             d=dataset.bsid
+    #     train, valid, test = (
+    #         dataloaders["train"],
+    #         dataloaders["valid"],
+    #         dataloaders["test"],
+    #     ) # 要用ForecastDF
+    #     return train, valid, test
 
     rng = np.random.default_rng(seed=seed)
 

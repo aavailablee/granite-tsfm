@@ -224,10 +224,61 @@ if __name__ == "__main__":
         scaler_type="standard",
     )
 
-    dset_train, dset_valid, dset_test = get_datasets(tsp, data, split_config)
+    if args.dataset == "ice":
+        from data_provider.scaler import init_scaler
+        from data_provider.data_loader import AttrMapper, BSIDMapper, Ice
+        from torch.utils.data import DataLoader
+        scaler = init_scaler("standard")
+        dataloaders = {}
+        transformer = AttrMapper()
+        id_transformer = BSIDMapper()
+        # weat_info_true: False  # 是否加载天气信息
+        # weat_dim: 3  # 输入维度（天气）
+        # attribute_true: True  # 是否添加导体属性信息
+        # topo_true: False  # 是否添加地形类别
+        cfg = {
+            "dataset": {
+                "have_weather_forecast": False,
+                "data_path": "/opt/data/private/model_test/PatchTST/PatchTST_supervised/dataset/all_ice/",
+                
+            },
+            "batch_size": 64,
+            "num_workers": 1,
+        }
+        class obj(object):
+            def __init__(self, d):
+                for k, v in d.items():
+                    if isinstance(k, (list, tuple)):
+                        setattr(
+                            self,
+                            k,
+                            [obj(x) if isinstance(x, dict) else x for x in v],
+                        )
+                    else:
+                        setattr(self, k, obj(v) if isinstance(v, dict) else v)
+        cfg = obj(cfg)
+        for category in ["train", "valid", "test"]:
+            dataset = Ice(cfg.dataset, category, transformer, id_transformer,scaler)
+            dataloaders[category] = DataLoader(
+                dataset,
+                batch_size=cfg.batch_size,
+                shuffle=True if category == "train" else False,
+                num_workers=cfg.num_workers,
+            )
+            if category == "test":
+                d=dataset.bsid
+        dset_train, dset_valid, dset_test = (
+            dataloaders["train"],
+            dataloaders["valid"],
+            dataloaders["test"],
+        )
+    else:
+        dset_train, dset_valid, dset_test = get_datasets(tsp, data, split_config)
 
     # Get model
     model = get_base_model(args)
+    # print(model)
+    # exit()
 
     # Pretrain，本来就是调用Trainer，只要dataset是getItem的都行，管你自定义什么臭x gun！
     model_save_path = pretrain(args, model, dset_train, dset_valid)

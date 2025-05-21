@@ -473,7 +473,7 @@ class ForecastDFDataset(BaseConcatDFDataset):
             context_length=context_length,
             prediction_length=prediction_length,
             fill_value=fill_value,
-            cls=self.BaseForecastDFDataset,
+            cls=self.BaseForecastDFDataset, # 这里实现一个新base
             stride=stride,
             enable_padding=enable_padding,
             # extra_args

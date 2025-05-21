@@ -400,3 +400,167 @@ class Dataset_Pred(Dataset):
 
     def inverse_transform(self, data):
         return self.scaler.inverse_transform(data)
+
+class Ice(Dataset):
+    def __init__(
+        self, cfg, label="train", transformer=None, id_transformer=None, scaler=None, scalerY=None
+    ):
+        from pathlib import Path
+        root = Path(cfg.data_path)
+        # 加载 .npz 文件
+        data = np.load(root / f"{label}.npz")
+
+        # 获取不同的数组
+        self.X = data['X']
+        self.y = data['Y']
+        self.d = data['bsids']
+        self.masks = data['masks']
+        self.xMask = self.masks[:, :48, :]  # 前48个 (seqLen, 48, channel)
+        self.yMask = self.masks[:, 48:, :]  # 后24个 (seqLen, 24, channel)
+        
+        self.bsid=self.d
+        self.have_weather_forecast = cfg.have_weather_forecast
+        self.scalerx = scaler
+        self.scalery = scalerY
+        
+        if self.have_weather_forecast:
+            self.weather_forecast = data['W']  # 如果用到 'W' 数组
+            self.weather_forecast = torch.from_numpy(
+                self.weather_forecast
+            ).float()
+        self.X = torch.from_numpy(self.X).float()
+        self.y = torch.from_numpy(self.y).float()
+
+        ds = _mask_data(self.d)
+        
+
+        d = []
+        if id_transformer is not None:
+            d.append(np.array([id_transformer.transform(x) for x in self.d]))
+        if transformer is not None:
+            d.append(np.array([transformer.transform(x, ds) for x in self.d]))
+
+        d = np.concatenate(d, axis=1)
+        self.d = torch.from_numpy(d).int()
+        
+        if label == "train":
+            self.X=self.scalerx.fit_transform(self.X.numpy())
+            self.y=self.scalery.fit_transform(self.y.numpy())
+            # self.X = self.scaler.fit_transform(self.X.reshape(-1, self.X.shape[-1])).reshape(self.X.shape)
+        else:
+            self.X=self.scalerx.transform(self.X.numpy())
+            self.y=self.scalery.transform(self.y.numpy())
+            # self.X = self.scaler.transform(self.X.reshape(-1, self.X.shape[-1])).reshape(self.X.shape)
+        self.X=torch.from_numpy(self.X).float()
+        # self.y = torch.from_numpy(self.y).float()
+
+    def __len__(self):
+        return len(self.X)
+
+    def __getitem__(self, index):
+        if self.have_weather_forecast:
+            return {
+                "x": self.X[index],
+                "y": self.y[index],
+                "weat": self.weat[index],
+                "d": self.d[index],
+            }
+        else:
+            return self.X[index], self.y[index], self.xMask[index], self.yMask[index]
+            # return {
+            #     "x": self.X[index],
+            #     "y": self.y[index],
+            #     "xm": self.xMask[index],
+            #     "ym": self.yMask[index],
+            #     # "d": self.d[index],
+            # }
+
+def _mask_data(devices):
+    devices = np.unique(devices)
+    mask_data = {}
+    
+    import json
+    # devices_stat_data = np.load('/home/lijing/code/south/south/SouthNetwork2/all_ice/devices_stat.npy', allow_pickle=True).item()  # 假设de.npy文件是以字典形式存储
+    with open('/opt/data/private/model_test/PatchTST/PatchTST_supervised/dataset/all_ice/bsid_stats.json', 'r', encoding='utf-8') as f:
+        devices_stat_data = json.load(f)
+    
+    
+    for dev in devices:
+        if dev in devices_stat_data:
+            mask_data[dev] = {
+                "volt": devices_stat_data[dev]['VOLTAGE_LEVEL'],  
+            }
+        else:
+            mask_data[dev] = {
+                "volt": None, 
+            }
+    return mask_data
+
+
+class BSIDMapper:
+    def __init__(self):
+        self.bsid_map = {}
+        self.inv_map = None
+
+    def transform(self, bsid: str):
+        if bsid not in self.bsid_map:
+            self.bsid_map[bsid] = len(self.bsid_map)
+        return [self.bsid_map[bsid]]
+
+    def _generate_inv(self):
+        self.inv_map = {v: k for k, v in self.bsid_map.items()}
+
+    def invert_transform(self, bsid: int):
+        if self.inv_map is None:
+            self._generate_inv()
+        return self.inv_map[bsid]
+
+
+class AttrMapper:
+    def __init__(self):
+        self.attr_map = {"volt": {}}
+        self.attr_map_key = ["volt"]
+
+    def transform(self, bsid: str, ds: dict):
+        attrs = ds[bsid]
+        new_attr = []
+        for attr in self.attr_map_key:
+            if attr not in self.attr_map:
+                raise ValueError(f"{attr} not in attr_map")
+            if attrs[attr] not in self.attr_map[attr]:
+                self.attr_map[attr][attrs[attr]] = len(self.attr_map[attr])
+            new_attr.append(self.attr_map[attr][attrs[attr]])
+        return new_attr
+    def invert_transform(self, attr: int, attr_key: str):
+        if attr_key not in self.attr_map:
+            raise ValueError(f"{attr_key} not in attr_map")
+        if attr not in self.attr_map[attr_key]:
+            raise ValueError(f"{attr} not in {attr_key} map")
+        return self.attr_map[attr_key][attr]
+    
+
+
+if __name__ == "__main__":
+    cfg = {
+        "dataset": {
+            "have_weather_forecast": False,
+            "data_path": "../all_ice/",
+            
+        },
+        "batch_size": 64,
+        "num_workers": 1,
+    }
+
+    class obj(object):
+        def __init__(self, d):
+            for k, v in d.items():
+                if isinstance(k, (list, tuple)):
+                    setattr(
+                        self,
+                        k,
+                        [obj(x) if isinstance(x, dict) else x for x in v],
+                    )
+                else:
+                    setattr(self, k, obj(v) if isinstance(v, dict) else v)
+
+    cfg = obj(cfg)
