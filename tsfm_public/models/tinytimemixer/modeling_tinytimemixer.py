@@ -871,7 +871,7 @@ class TinyTimeMixerAdaptivePatchingBlock(nn.Module):
 
         if config.d_model % self.adaptive_patch_factor != 0:
             raise ValueError("d_model should be divisible by 2^i, where i varies from 0 to adaptive_patching_levels.")
-        temp_config.num_patches = temp_config.num_patches * self.adaptive_patch_factor
+        temp_config.num_patches = temp_config.num_patches * self.adaptive_patch_factor #会更改patchs
         temp_config.d_model = temp_config.d_model // self.adaptive_patch_factor
 
         self.mixer_layers = nn.ModuleList([TinyTimeMixerLayer(temp_config) for i in range(temp_config.num_layers)])
@@ -1959,10 +1959,13 @@ class TinyTimeMixerForPrediction(TinyTimeMixerPreTrainedModel):
             y_hat = y_hat * scale + loc
             if future_values is not None and return_loss is True and loss is not None:
                 if future_observed_mask is not None:
-                    loss_val = loss(y_hat[fut_mask_bool], future_values[fut_mask_bool])
+                    loss_val = loss(y_hat[:, :, :1], future_values[:, :, :1])
+                    # loss_val = loss(y_hat, future_values)
+                    # loss_val = loss(y_hat[fut_mask_bool], future_values[fut_mask_bool])
                 else:
                     # avoiding mask operations for performance benefits on normal scenarios.
-                    loss_val = loss(y_hat, future_values)
+                    # loss_val = loss(y_hat, future_values)
+                    loss_val = loss(y_hat[:, :, :1], future_values[:, :, :1])
 
         if not return_dict:
             return tuple(

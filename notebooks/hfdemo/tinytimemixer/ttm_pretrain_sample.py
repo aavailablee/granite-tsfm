@@ -213,23 +213,28 @@ if __name__ == "__main__":
         f"{'*' * 20} Pre-training a TTM for context len = {args.context_length}, forecast len = {args.forecast_length} {'*' * 20}"
     )
 
-    data, split_config, column_specifiers = data_provider(args)
+    if args.dataset == "ice":
+        pass
+    else:
+        data, split_config, column_specifiers = data_provider(args)
 
-    tsp = TimeSeriesPreprocessor(
-        **column_specifiers,
-        context_length=args.context_length,
-        prediction_length=args.forecast_length,
-        scaling=True,
-        encode_categorical=False,
-        scaler_type="standard",
-    )
+        tsp = TimeSeriesPreprocessor(
+            **column_specifiers,
+            context_length=args.context_length,
+            prediction_length=args.forecast_length,
+            scaling=True,
+            encode_categorical=False,
+            scaler_type="standard",
+        )
 
     if args.dataset == "ice":
         from data_provider.scaler import init_scaler
         from data_provider.data_loader import AttrMapper, BSIDMapper, Ice
         from torch.utils.data import DataLoader
-        scaler = init_scaler("standard")
-        dataloaders = {}
+        xscaler = init_scaler("standard")
+        yscaler = init_scaler("standard")
+        datasets = {}
+        # dataloaders = {}
         transformer = AttrMapper()
         id_transformer = BSIDMapper()
         # weat_info_true: False  # 是否加载天气信息
@@ -257,21 +262,30 @@ if __name__ == "__main__":
                     else:
                         setattr(self, k, obj(v) if isinstance(v, dict) else v)
         cfg = obj(cfg)
-        for category in ["train", "valid", "test"]:
-            dataset = Ice(cfg.dataset, category, transformer, id_transformer,scaler)
-            dataloaders[category] = DataLoader(
-                dataset,
-                batch_size=cfg.batch_size,
-                shuffle=True if category == "train" else False,
-                num_workers=cfg.num_workers,
-            )
-            if category == "test":
-                d=dataset.bsid
+        for category in ["train", "val", "test"]:
+            datasets[category] = Ice(cfg.dataset, category, transformer, id_transformer, xscaler, yscaler)
+            # if category == "test":
+            #     d=datasets[category].bsid
         dset_train, dset_valid, dset_test = (
-            dataloaders["train"],
-            dataloaders["valid"],
-            dataloaders["test"],
+            datasets["train"],
+            datasets["val"],
+            datasets["test"],
         )
+        # for category in ["train", "val", "test"]:
+        #     dataset = Ice(cfg.dataset, category, transformer, id_transformer, xscaler, yscaler)
+        #     dataloaders[category] = DataLoader(
+        #         dataset,
+        #         batch_size=cfg.batch_size,
+        #         shuffle=True if category == "train" else False,
+        #         num_workers=cfg.num_workers,
+        #     )
+        #     if category == "test":
+        #         d=dataset.bsid
+        # dset_train, dset_valid, dset_test = (
+        #     dataloaders["train"],
+        #     dataloaders["val"],
+        #     dataloaders["test"],
+        # )
     else:
         dset_train, dset_valid, dset_test = get_datasets(tsp, data, split_config)
 

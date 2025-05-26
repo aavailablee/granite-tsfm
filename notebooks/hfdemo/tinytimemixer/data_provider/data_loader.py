@@ -432,7 +432,6 @@ class Ice(Dataset):
         self.y = torch.from_numpy(self.y).float()
 
         ds = _mask_data(self.d)
-        
 
         d = []
         if id_transformer is not None:
@@ -452,28 +451,39 @@ class Ice(Dataset):
             self.y=self.scalery.transform(self.y.numpy())
             # self.X = self.scaler.transform(self.X.reshape(-1, self.X.shape[-1])).reshape(self.X.shape)
         self.X=torch.from_numpy(self.X).float()
-        # self.y = torch.from_numpy(self.y).float()
+        self.y = torch.from_numpy(self.y).float()
 
     def __len__(self):
         return len(self.X)
 
     def __getitem__(self, index):
+        item = {
+            "past_values": self.X[index],
+            "future_values": self.y[index],
+            "past_observed_mask": self.xMask[index],
+            "future_observed_mask": self.yMask[index],
+        }
         if self.have_weather_forecast:
-            return {
-                "x": self.X[index],
-                "y": self.y[index],
-                "weat": self.weat[index],
-                "d": self.d[index],
-            }
-        else:
-            return self.X[index], self.y[index], self.xMask[index], self.yMask[index]
-            # return {
-            #     "x": self.X[index],
-            #     "y": self.y[index],
-            #     "xm": self.xMask[index],
-            #     "ym": self.yMask[index],
-            #     # "d": self.d[index],
-            # }
+            item["weat"] = self.weather_forecast[index]
+        if len(self.d) > 0:
+            item["d"] = self.d[index]
+        return item
+        # if self.have_weather_forecast:
+        #     return {
+        #         "x": self.X[index],
+        #         "y": self.y[index],
+        #         "weat": self.weat[index],
+        #         "d": self.d[index],
+        #     }
+        # else:
+        #     # return self.X[index], self.y[index], self.xMask[index], self.yMask[index]
+        #     return {
+        #         "past_values": self.X[index],
+        #         "future_values": self.y[index],
+        #         "past_observed_mask": self.xMask[index],
+        #         "future_observed_mask": self.yMask[index],
+        #         # "d": self.d[index],
+        #     }
 
 def _mask_data(devices):
     devices = np.unique(devices)

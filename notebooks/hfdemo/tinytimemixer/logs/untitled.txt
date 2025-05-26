@@ -1,1 +1,2 @@
 nohup sh ttm_pretrain_script.sh > ./logs/ttm_pretrain_nohup.log 2>&1 &
+nohup sh ttm_pretrain_script_ice.sh > ./logs/ttm_pretrain_nohup_ice.log 2>&1 &

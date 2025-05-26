@@ -307,7 +307,12 @@ def plot_predictions(
             random_samples = {}
             for k in dset_keys:
                 if k in signature_keys:
-                    random_samples[k] = torch.stack([dset[i][k] for i in indices]).to(device=device)
+                    # random_samples[k] = torch.stack([dset[i][k] for i in indices]).to(device=device)
+                    random_samples[k] = torch.stack([
+                        # 添加类型判断：如果是numpy则转换，否则保持原Tensor
+                        torch.from_numpy(elem) if isinstance(elem, np.ndarray) else elem 
+                        for elem in (dset[i][k] for i in indices)  # 使用生成器避免重复访问dset
+                    ]).to(device=device)
             output = model(**random_samples)
             predictions_subset = output.prediction_outputs[:, :, channel].squeeze().cpu().numpy()
             prediction_length = predictions_subset.shape[1]

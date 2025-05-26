@@ -73,7 +73,7 @@ def get_ttm_args():
         help="Number of GPUs",
     )
     parser.add_argument("--random_seed", "-rs", type=int, required=False, default=42, help="Random seed")
-    parser.add_argument("--batch_size", "-bs", type=int, required=False, default=100, help="Batch size")
+    parser.add_argument("--batch_size", "-bs", type=int, required=False, default=64, help="Batch size")
     parser.add_argument(
         "--num_epochs",
         "-ne",
@@ -104,7 +104,7 @@ def get_ttm_args():
         "-ds",
         type=str,
         required=False,
-        default="traffic",
+        default="ice",
         help="Dataset",
     )
     parser.add_argument(
@@ -225,7 +225,7 @@ def get_ttm_args():
         "--enc_in",
         type=float,
         required=False,
-        default=7,
+        default=4,
         help="enc_in",
     )
 
