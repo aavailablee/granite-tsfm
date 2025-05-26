@@ -150,3 +150,4 @@ tmp*/
 temp/
 *.pdf
 ttm_finetuned_models/
+notebooks/hfdemo/tinytimemixer/ttm_finetuned_models/etth1/test_zeroshot_ch_0.pdf
