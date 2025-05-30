@@ -10,19 +10,19 @@ seq_len=48
 
 # 参数组合循环（sh兼容写法）
 pred_lengths="24"
-loss_types="mse mae"
+loss_types="mse"
 
 for pred_length in $pred_lengths; do
     for loss_type in $loss_types; do
         echo "正在训练：pred_length=${pred_length}, loss=${loss_type}"
         start_time=$(date +%s)
         
-        log_name="ttmb_${model_name}_${seq_len}_${pred_length}_${loss_type}_MS.log"
+        log_name="ttmb_${model_name}_${seq_len}_${pred_length}_${loss_type}_adaptP3.log"
         
         python ttm_pretrain_sample.py \
             --context_length $seq_len \
             --forecast_length $pred_length \
-            --patch_length 12 \
+            --patch_length 16 \
             --batch_size 64 \
             --num_layers 3 \
             --decoder_num_layers 3 \
@@ -31,7 +31,7 @@ for pred_length in $pred_lengths; do
             --early_stopping 0 \
             --enc_in 4 \
             --loss $loss_type \
-            --adaptive_patching_levels 0 \
+            --adaptive_patching_levels 3 \
             --num_epochs 10 \
             --dataset "$model_name" \
             > "./logs/${log_name}" 2>&1

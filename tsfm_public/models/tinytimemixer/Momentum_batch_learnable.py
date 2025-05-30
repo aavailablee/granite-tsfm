@@ -32,7 +32,7 @@ class Momentum_batch_learnable(nn.Module):
         for idx_ in range(channels):
             for idx in range(len(self.cfg.momentum_params) * 2 + 1):
                 temp[idx_:idx_+1,idx:idx + 1, :] = torch.ones(1, 1, vector_len) * (-(((len(self.cfg.momentum_params) - idx) ** 2) / 4))
-        self.learnable_matrix = nn.Parameter(temp) # C, 7, F
+        self.learnable_matrix = nn.Parameter(temp) # C, 7, F 路程的平方，是加速度口牙
 
     def gen_mul_tensor(self, momentum_params_learnable): ## C, 3,1,1
         momentum_params_learnable = torch.sigmoid(momentum_params_learnable)
@@ -72,8 +72,8 @@ class Momentum_batch_learnable(nn.Module):
         # 生成混合权重，给出vector，初始就是普通频谱那样
         matrix = torch.softmax(self.learnable_matrix, dim=1)  # C, 7, F
 
-        matrix_1 = 2*(matrix[:,N+1:,:]-torch.flip(matrix[:,:N,:], (1,))) # C, 3,F
-        matrix_2 = (2*torch.sum(matrix[:,:N,:], dim=1, keepdim=True)+matrix[:, N:N+1,:]) # C, 1, F
+        matrix_1 = 2*(matrix[:,N+1:,:]-torch.flip(matrix[:,:N,:], (1,))) # C, 3,F 前后加速度扣减，，是模拟物理中的二阶差分口牙
+        matrix_2 = (2*torch.sum(matrix[:,:N,:], dim=1, keepdim=True)+matrix[:, N:N+1,:]) # C, 1, F 强化历史趋势的持续影响，不让未来占太多权重
 
         '''
         matrix_1	加速度（趋势变化率）	增强短期波动与趋势反转信号（如股价突破点）
@@ -84,6 +84,7 @@ class Momentum_batch_learnable(nn.Module):
         # Combine the updated momentum_matrix with the learnable_matrix to produce the final vector
         vector = torch.transpose(torch.mul(matrix_1.unsqueeze(3), out).sum(dim=1), 1,2)+torch.mul(matrix_2, vector)
         #torch.t(torch.mul(C, 3,F,1/ C,3,F,B).sum(dim=1))+torch.mul(C, 1, F/ C,B,F)
+        # mul是点乘，对应元素相乘，不是x乘，也就是实际上的赋予权重
         # C, B,F
         vector = torch.transpose(vector, 0,1) #B,C,F
 

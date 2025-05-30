@@ -50,7 +50,7 @@ def get_base_model(args):
         context_length=args.context_length,
         prediction_length=args.forecast_length,
         patch_length=args.patch_length,
-        num_input_channels=7,
+        num_input_channels=args.enc_in,
         patch_stride=args.patch_length,
         d_model=args.d_model,
         num_layers=args.num_layers,  # increase the number of layers if we want more complex models
@@ -65,6 +65,7 @@ def get_base_model(args):
         decoder_num_layers=args.decoder_num_layers,  # increase the number of layers if we want more complex models
         decoder_adaptive_patching_levels=0,
         decoder_mode="common_channel",
+        # decoder_mode="mix_channel",
         decoder_raw_residual=False,
         use_decoder=True,
         decoder_d_model=args.decoder_d_model,

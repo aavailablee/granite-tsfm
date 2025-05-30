@@ -223,7 +223,7 @@ def get_ttm_args():
 
     parser.add_argument(
         "--enc_in",
-        type=float,
+        type=int,
         required=False,
         default=4,
         help="enc_in",

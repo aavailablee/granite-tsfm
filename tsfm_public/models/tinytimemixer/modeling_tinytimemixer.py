@@ -301,6 +301,7 @@ class TinyTimeMixerChannelFeatureMixerBlock(nn.Module):
 
         self.norm = TinyTimeMixerNormLayer(config)
         self.gated_attn = config.gated_attn
+        # print(config.num_input_channels)
         self.mlp = TinyTimeMixerMLP(
             in_features=config.num_input_channels,
             out_features=config.num_input_channels,
