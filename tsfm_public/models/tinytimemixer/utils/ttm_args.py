@@ -237,6 +237,21 @@ def get_ttm_args():
         help="loss",
     )
 
+    parser.add_argument(
+        "--bsa",
+        type=int,
+        required=False,
+        default="1",
+        help="use bsa",
+    )
+
+    parser.add_argument(
+        "--decoder_channel",
+        type=str,
+        required=False,
+        default="common_channel",
+        help="use common_channel",
+    )
     
 
     # Parsing the arguments
@@ -244,6 +259,7 @@ def get_ttm_args():
     args.early_stopping = int_to_bool(args.early_stopping)
     args.freeze_backbone = int_to_bool(args.freeze_backbone)
     args.enable_prefix_tuning = int_to_bool(args.enable_prefix_tuning)
+    args.bsa = int_to_bool(args.bsa)
     args.d_model = args.patch_length * args.d_model_scale
     args.decoder_d_model = args.patch_length * args.decoder_d_model_scale
     args.momentum_params = [0.9, 0.99, 0.999] #TODO momentum parameter

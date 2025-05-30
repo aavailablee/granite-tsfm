@@ -1585,6 +1585,7 @@ class TinyTimeMixerModel(TinyTimeMixerPreTrainedModel):
             self.scaler = TinyTimeMixerNOPScaler(config)
 
         self.d_model = config.d_model
+        self.use_bsa = config.bsa
 
         # # Initialize weights and apply final processing
         # if config.post_init:
@@ -1619,9 +1620,10 @@ class TinyTimeMixerModel(TinyTimeMixerPreTrainedModel):
         if past_observed_mask is None:
             past_observed_mask = torch.ones_like(past_values)
         scaled_past_values, loc, scale = self.scaler(past_values, past_observed_mask)
-        scaled_past_values = scaled_past_values.permute(0,2,1)
-        scaled_past_values = self.momentum(scaled_past_values)
-        scaled_past_values = scaled_past_values.permute(0,2,1)
+        if self.use_bsa:
+            scaled_past_values = scaled_past_values.permute(0,2,1)
+            scaled_past_values = self.momentum(scaled_past_values)
+            scaled_past_values = scaled_past_values.permute(0,2,1)
 
         patched_x = self.patching(scaled_past_values)  # [batch_size x num_input_channels x num_patch x patch_length
 
@@ -1960,13 +1962,13 @@ class TinyTimeMixerForPrediction(TinyTimeMixerPreTrainedModel):
             y_hat = y_hat * scale + loc
             if future_values is not None and return_loss is True and loss is not None:
                 if future_observed_mask is not None:
-                    loss_val = loss(y_hat[:, :, :1], future_values[:, :, :1])
-                    # loss_val = loss(y_hat, future_values)
+                    # loss_val = loss(y_hat[:, :, :1], future_values[:, :, :1])
+                    loss_val = loss(y_hat, future_values)
                     # loss_val = loss(y_hat[fut_mask_bool], future_values[fut_mask_bool])
                 else:
                     # avoiding mask operations for performance benefits on normal scenarios.
-                    # loss_val = loss(y_hat, future_values)
-                    loss_val = loss(y_hat[:, :, :1], future_values[:, :, :1])
+                    loss_val = loss(y_hat, future_values)
+                    # loss_val = loss(y_hat[:, :, :1], future_values[:, :, :1])
 
         if not return_dict:
             return tuple(

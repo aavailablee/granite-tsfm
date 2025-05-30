@@ -216,6 +216,7 @@ class TinyTimeMixerConfig(PretrainedConfig):
         huber_delta: float = 1,
         momentum: list = [0.9, 0.99, 0.999],
         enc_in: int = 7,
+        bsa: bool = True,
         **kwargs,
     ):
         self.num_input_channels = num_input_channels
@@ -277,6 +278,7 @@ class TinyTimeMixerConfig(PretrainedConfig):
         self.batch_size = 100
         self.bptt = True
         self.enc_in = int(enc_in)
+        self.bsa = bsa
 
         super().__init__(**kwargs)
 

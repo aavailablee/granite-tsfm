@@ -64,7 +64,8 @@ def get_base_model(args):
         # decoder params
         decoder_num_layers=args.decoder_num_layers,  # increase the number of layers if we want more complex models
         decoder_adaptive_patching_levels=0,
-        decoder_mode="common_channel",
+        decoder_mode=args.decoder_channel,
+        # decoder_mode="common_channel",
         # decoder_mode="mix_channel",
         decoder_raw_residual=False,
         use_decoder=True,
@@ -72,6 +73,7 @@ def get_base_model(args):
         loss=args.loss,
 
         enc_in=args.enc_in,
+        bsa = args.bsa,
     )
 
     model = TinyTimeMixerForPrediction(config)

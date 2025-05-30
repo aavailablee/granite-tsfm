@@ -11,18 +11,20 @@ seq_len=48
 # 参数组合循环（sh兼容写法）
 pred_lengths="24"
 loss_types="mse"
+bsa=0
+decoder_channel="mix_channel"
 
 for pred_length in $pred_lengths; do
     for loss_type in $loss_types; do
         echo "正在训练：pred_length=${pred_length}, loss=${loss_type}"
         start_time=$(date +%s)
         
-        log_name="ttmb_${model_name}_${seq_len}_${pred_length}_${loss_type}_adaptP3.log"
+        log_name="ttmb_${model_name}_${seq_len}_${pred_length}_${loss_type}_bsa${bsa}_${decoder_channel}.log"
         
         python ttm_pretrain_sample.py \
             --context_length $seq_len \
             --forecast_length $pred_length \
-            --patch_length 16 \
+            --patch_length 12 \
             --batch_size 64 \
             --num_layers 3 \
             --decoder_num_layers 3 \
@@ -31,9 +33,11 @@ for pred_length in $pred_lengths; do
             --early_stopping 0 \
             --enc_in 4 \
             --loss $loss_type \
-            --adaptive_patching_levels 3 \
+            --adaptive_patching_levels 0 \
             --num_epochs 10 \
             --dataset "$model_name" \
+            --bsa $bsa \
+            --decoder_channel $decoder_channel \
             > "./logs/${log_name}" 2>&1
             
         echo "已完成：${log_name}"
