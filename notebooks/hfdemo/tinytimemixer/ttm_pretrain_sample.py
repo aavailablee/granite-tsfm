@@ -11,7 +11,7 @@ sys.path.append(os.path.abspath("/opt/data/private/model_test/granite-tsfm"))
 
 import pandas as pd
 from torch.optim import AdamW
-from torch.optim.lr_scheduler import OneCycleLR
+from torch.optim.lr_scheduler import OneCycleLR, ExponentialLR
 from transformers import EarlyStoppingCallback, Trainer, TrainingArguments, set_seed
 
 from tsfm_public import TimeSeriesPreprocessor, get_datasets
@@ -43,6 +43,57 @@ logger = logging.getLogger(__file__)
 # python ttm_pretrain_sample.py --data_root_path datasets/
 # See the get_ttm_args() function to know more about other TTM arguments
 
+from torch.optim.lr_scheduler import _LRScheduler
+
+class ExponentialEpochScheduler(_LRScheduler):
+    """
+    指数衰减调度器 - 每个 epoch 后更新一次学习率
+    完全兼容 PyTorch 的调度器接口
+    """
+    def __init__(self, optimizer, gamma, steps_per_epoch, last_epoch=-1):
+        """
+        Args:
+            optimizer: 优化器对象
+            gamma: 每 epoch 的衰减系数
+            steps_per_epoch: 每个 epoch 的步数 (batch 数)
+            last_epoch: 最后一次 epoch 索引
+        """
+        self.gamma = gamma
+        self.steps_per_epoch = steps_per_epoch
+        self.global_step_count = 1  # 跟踪全局步数
+        super(ExponentialEpochScheduler, self).__init__(optimizer, last_epoch)
+    
+    def get_lr(self):
+        """
+        返回当前学习率 - 基于当前 epoch 计算
+        """
+        # 计算当前 epoch
+        current_epoch = self.global_step_count // self.steps_per_epoch
+        
+        # 应用指数衰减
+        return [base_lr * (self.gamma ** current_epoch) 
+                for base_lr in self.base_lrs]
+    
+    def step(self):
+        """
+        每次 batch 后调用 - 跟踪步数，在 epoch 结束时更新学习率
+        """
+        self.global_step_count += 1
+        current_step = self.global_step_count
+        
+        # 检查是否完成一个 epoch
+        if current_step % self.steps_per_epoch == 0:
+            # 调用父类的 step() 来更新 _last_lr 和优化器的学习率
+            super().step()  
+            
+            # 调试输出
+            current_epoch = current_step // self.steps_per_epoch
+            print(f"\nEpoch {current_epoch} complete!")
+            print(f"Updating LR to: {self.get_lr()[0]:.6f}")
+        else:
+            # 确保在非 epoch 结束时也更新状态
+            # 但不实际改变学习率（维持上次设置的值）
+            self._last_lr = [group['lr'] for group in self.optimizer.param_groups]
 
 def get_base_model(args):
     # Pre-train a `TTM` forecasting model
@@ -54,7 +105,7 @@ def get_base_model(args):
         patch_stride=args.patch_length,
         d_model=args.d_model,
         num_layers=args.num_layers,  # increase the number of layers if we want more complex models
-        mode="common_channel",
+        mode=args.encoder_channel,
         expansion_factor=2,
         dropout=args.dropout,
         head_dropout=args.head_dropout,
@@ -74,6 +125,7 @@ def get_base_model(args):
 
         enc_in=args.enc_in,
         bsa = args.bsa,
+        batch_size=args.batch_size,
     )
 
     model = TinyTimeMixerForPrediction(config)
@@ -116,14 +168,31 @@ def pretrain(args, model, dset_train, dset_val):
     )
 
     # Optimizer and scheduler
+    # learning_rate = 0.0001
     optimizer = AdamW(model.parameters(), lr=learning_rate)
+    # 0.0001 * 0.9 exponential
     scheduler = OneCycleLR(
         optimizer,
         learning_rate,
+        pct_start=0.3,
         epochs=args.num_epochs,
         steps_per_epoch=math.ceil(len(dset_train) / args.batch_size),
         # steps_per_epoch=math.ceil(len(dset_train) / (args.batch_size * args.num_gpus)),
     )
+    # 创建一个恒等学习率调度器（每一步都返回初始学习率）
+    # import torch
+    # scheduler = torch.optim.lr_scheduler.LambdaLR(
+    #     optimizer,
+    #     lr_lambda=lambda step: 1.0  # 始终返回乘数1.0，即学习率不变
+    # )
+    # 替换原来的 OneCycleLR
+    # steps_per_epoch = math.ceil(len(dset_train) / args.batch_size)
+
+    # scheduler = ExponentialEpochScheduler(
+    #     optimizer,
+    #     gamma=0.8,  # 每个 epoch 的衰减系数
+    #     steps_per_epoch=steps_per_epoch
+    # )
 
     # Create the early stopping callback
     early_stopping_callback = EarlyStoppingCallback(
@@ -208,6 +277,7 @@ def inference(args, model_path, dset_test):
 if __name__ == "__main__":
     # Arguments
     args = get_ttm_args()
+    # args.batch_size = 4096
 
     # Set seed
     set_seed(args.random_seed)
@@ -240,10 +310,6 @@ if __name__ == "__main__":
         # dataloaders = {}
         transformer = AttrMapper()
         id_transformer = BSIDMapper()
-        # weat_info_true: False  # 是否加载天气信息
-        # weat_dim: 3  # 输入维度（天气）
-        # attribute_true: True  # 是否添加导体属性信息
-        # topo_true: False  # 是否添加地形类别
         cfg = {
             "dataset": {
                 "have_weather_forecast": False,
@@ -274,21 +340,6 @@ if __name__ == "__main__":
             datasets["val"],
             datasets["test"],
         )
-        # for category in ["train", "val", "test"]:
-        #     dataset = Ice(cfg.dataset, category, transformer, id_transformer, xscaler, yscaler)
-        #     dataloaders[category] = DataLoader(
-        #         dataset,
-        #         batch_size=cfg.batch_size,
-        #         shuffle=True if category == "train" else False,
-        #         num_workers=cfg.num_workers,
-        #     )
-        #     if category == "test":
-        #         d=dataset.bsid
-        # dset_train, dset_valid, dset_test = (
-        #     dataloaders["train"],
-        #     dataloaders["val"],
-        #     dataloaders["test"],
-        # )
     else:
         dset_train, dset_valid, dset_test = get_datasets(tsp, data, split_config)
 

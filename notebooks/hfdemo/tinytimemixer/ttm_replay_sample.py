@@ -35,7 +35,7 @@ set_seed(SEED)
 # TTM Model path. The default model path is Granite-R2. Below, you can choose other TTM releases.
 # TTM_MODEL_PATH = "/home/xiaofuqiang/repo/granite-tsfm/notebooks/hfdemo/tinytimemixer/tmp/TTM_cl-48_fl-24_pl-10_apl-0_ne-100_es-False_bs-64_noMomentum-02/ttm_pretrained"
 # TTM_MODEL_PATH = "/opt/data/private/model_test/granite-tsfm/notebooks/hfdemo/tinytimemixer/tmp/MS_MSE_decMix_20250529-231920_ice_cl-48_fl-24_pl-16_ne-10/ttm_pretrained"
-TTM_MODEL_PATH = "/opt/data/private/model_test/granite-tsfm/notebooks/hfdemo/tinytimemixer/tmp/20250529-213649_ice_cl-48_fl-24_pl-16_ne-10/ttm_pretrained"
+TTM_MODEL_PATH = "/opt/data/private/model_test/granite-tsfm/notebooks/hfdemo/tinytimemixer/tmp/20250609-222957_etth1_cl-48_fl-24_pl-12_ne-10/ttm_pretrained"
 
 
 # Context length, Or Length of the history.
@@ -178,7 +178,7 @@ def zeroshot_eval(dataset_name, batch_size, context_length=48, forecast_length=2
         dset=dset_test,
         plot_dir=os.path.join(OUT_DIR, dataset_name),
         plot_prefix="test_zeroshotap3",
-        indices=[200000, 200001, 200002, 200003, 200004, 200005, 200006, 200007, 200008, 200009],
+        indices=[0, 2, 4],
         channel=0,
     )
 
@@ -187,5 +187,5 @@ zeroshot_eval(
     context_length=CONTEXT_LENGTH,
     forecast_length=PREDICTION_LENGTH,
     batch_size=64,
-    loss="mse",
+    loss="mae",
 )

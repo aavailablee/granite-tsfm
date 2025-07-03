@@ -7,7 +7,7 @@ import os
 import tempfile
 
 import sys
-sys.path.append(os.path.abspath("/home/xiaofuqiang/repo/granite-tsfm"))
+sys.path.append(os.path.abspath("/opt/data/private/model_test/granite-tsfm"))
 
 import pandas as pd
 from torch.optim import AdamW
@@ -35,7 +35,7 @@ set_seed(SEED)
 # TTM Model path. The default model path is Granite-R2. Below, you can choose other TTM releases.
 # TTM_MODEL_PATH = "/home/xiaofuqiang/repo/granite-tsfm/notebooks/hfdemo/tinytimemixer/tmp/TTM_cl-48_fl-24_pl-10_apl-0_ne-100_es-False_bs-64_noMomentum-02/ttm_pretrained"
 # TTM_MODEL_PATH = "/home/xiaofuqiang/repo/granite-tsfm/notebooks/hfdemo/tinytimemixer/tmp/TTM_cl-48_fl-24_pl-10_apl-0_ne-100_es-False_bs-64_learnable/ttm_pretrained"
-TTM_MODEL_PATH = "/home/xiaofuqiang/repo/granite-tsfm/notebooks/hfdemo/tinytimemixer/tmp/20250228-092742_TTM_cl-48_fl-24_pl-10_apl-0_ne-100_es-False_bs-64_drop-0.2/ttm_pretrained"
+TTM_MODEL_PATH = "/opt/data/private/model_test/granite-tsfm/notebooks/hfdemo/tinytimemixer/tmp/20250609-222957_etth1_cl-48_fl-24_pl-12_ne-10/ttm_pretrained"
 
 
 # TTM_MODEL_PATH = "ibm-granite/granite-timeseries-ttm-r1"
@@ -49,11 +49,11 @@ CONTEXT_LENGTH = 48
 PREDICTION_LENGTH = 24
 
 TARGET_DATASET = "etth1"
-dataset_path = "/home/xiaofuqiang/repo/granite-tsfm/notebooks/hfdemo/tinytimemixer/ETTh1.csv"
+dataset_path = "/opt/data/private/model_test/dataset/all_six_datasets/ETT-small/ETTh1.csv"
 
 
 # Results dir
-OUT_DIR = "ttm_finetuned_models/"
+OUT_DIR = "./ttm_finetuned_models/"
 
 
 timestamp_column = "date"
@@ -83,7 +83,8 @@ column_specifiers = {
 }
 
 
-def zeroshot_eval(dataset_name, batch_size, context_length=48, forecast_length=24):
+def zeroshot_eval(dataset_name, batch_size, context_length=48, forecast_length=24,
+                  loss="mse"):
     # Get data
 
     tsp = TimeSeriesPreprocessor(
@@ -111,8 +112,9 @@ def zeroshot_eval(dataset_name, batch_size, context_length=48, forecast_length=2
             report_to="none",
         ),
     )
+    zeroshot_trainer.model.loss = loss
     # evaluate = zero-shot performance
-    print("+" * 20, "Test MSE zero-shot", "+" * 20)
+    print("+" * 20, "Test "+loss+" zero-shot", "+" * 20)
     zeroshot_output = zeroshot_trainer.evaluate(dset_test)
     print(zeroshot_output)
 
@@ -141,5 +143,7 @@ def zeroshot_eval(dataset_name, batch_size, context_length=48, forecast_length=2
     )
 
 zeroshot_eval(
-    dataset_name=TARGET_DATASET, context_length=CONTEXT_LENGTH, forecast_length=PREDICTION_LENGTH, batch_size=64
+    dataset_name=TARGET_DATASET, context_length=CONTEXT_LENGTH, forecast_length=PREDICTION_LENGTH,
+    batch_size=64,
+    loss="mae"
 )

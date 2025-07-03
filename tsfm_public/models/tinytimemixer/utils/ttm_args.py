@@ -73,7 +73,7 @@ def get_ttm_args():
         help="Number of GPUs",
     )
     parser.add_argument("--random_seed", "-rs", type=int, required=False, default=42, help="Random seed")
-    parser.add_argument("--batch_size", "-bs", type=int, required=False, default=64, help="Batch size")
+    parser.add_argument("--batch_size", "-bs", type=int, required=False, default=1024, help="Batch size")
     parser.add_argument(
         "--num_epochs",
         "-ne",
@@ -246,11 +246,27 @@ def get_ttm_args():
     )
 
     parser.add_argument(
+        "--encoder_channel",
+        type=str,
+        required=False,
+        default="common_channel",
+        help="use common_channel",
+    )
+
+    parser.add_argument(
         "--decoder_channel",
         type=str,
         required=False,
         default="common_channel",
         help="use common_channel",
+    )
+
+    parser.add_argument(
+        "--is_debug",
+        type=bool,
+        required=False,
+        default=True,
+        help="use debug",
     )
     
 
@@ -291,7 +307,8 @@ def get_ttm_args():
         # f"_drop-{args.head_dropout}"
         ,
     )
-    os.makedirs(args.save_dir, exist_ok=True)
+    if args.is_debug == False:
+        os.makedirs(args.save_dir, exist_ok=True)
 
     return args
 

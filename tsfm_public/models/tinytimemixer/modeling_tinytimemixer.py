@@ -1572,7 +1572,10 @@ class TinyTimeMixerModel(TinyTimeMixerPreTrainedModel):
         super().__init__(config)
 
         self.use_return_dict = config.use_return_dict
-        self.momentum = Momentum_batch_learnable(config, config.enc_in, config.context_length)
+        if(config.enc_in == 4):
+            self.momentum = Momentum_batch_learnable(config, config.enc_in-2, config.context_length)
+        else:
+            self.momentum = Momentum_batch_learnable(config, config.enc_in, config.context_length)
         # self.momentum = Momentum_batch(config, 7, config.context_length)
         self.encoder = TinyTimeMixerEncoder(config)
         self.patching = TinyTimeMixerPatchify(config)
@@ -1586,6 +1589,7 @@ class TinyTimeMixerModel(TinyTimeMixerPreTrainedModel):
 
         self.d_model = config.d_model
         self.use_bsa = config.bsa
+        self.enc_in = config.enc_in
 
         # # Initialize weights and apply final processing
         # if config.post_init:
@@ -1619,11 +1623,20 @@ class TinyTimeMixerModel(TinyTimeMixerPreTrainedModel):
 
         if past_observed_mask is None:
             past_observed_mask = torch.ones_like(past_values)
-        scaled_past_values, loc, scale = self.scaler(past_values, past_observed_mask)
         if self.use_bsa:
-            scaled_past_values = scaled_past_values.permute(0,2,1)
-            scaled_past_values = self.momentum(scaled_past_values)
-            scaled_past_values = scaled_past_values.permute(0,2,1)
+            if self.enc_in == 4:
+                past_values = past_values.permute(0,2,1)
+                momentum_values = self.momentum(past_values[:,1:3,:])
+                past_values = torch.cat([past_values[:, 0:1, :], momentum_values, past_values[:, 3:, :]], dim=1)
+                past_values = past_values.permute(0,2,1)
+                scaled_past_values, loc, scale = self.scaler(past_values, past_observed_mask)
+            else:
+                scaled_past_values, loc, scale = self.scaler(past_values, past_observed_mask)
+                scaled_past_values = scaled_past_values.permute(0,2,1)
+                scaled_past_values = self.momentum(scaled_past_values)
+                scaled_past_values = scaled_past_values.permute(0,2,1)
+        else:
+            scaled_past_values, loc, scale = self.scaler(past_values, past_observed_mask)
 
         patched_x = self.patching(scaled_past_values)  # [batch_size x num_input_channels x num_patch x patch_length
 
@@ -1963,8 +1976,8 @@ class TinyTimeMixerForPrediction(TinyTimeMixerPreTrainedModel):
             if future_values is not None and return_loss is True and loss is not None:
                 if future_observed_mask is not None:
                     # loss_val = loss(y_hat[:, :, :1], future_values[:, :, :1])
-                    loss_val = loss(y_hat, future_values)
-                    # loss_val = loss(y_hat[fut_mask_bool], future_values[fut_mask_bool])
+                    # loss_val = loss(y_hat, future_values)
+                    loss_val = loss(y_hat[fut_mask_bool], future_values[fut_mask_bool])
                 else:
                     # avoiding mask operations for performance benefits on normal scenarios.
                     loss_val = loss(y_hat, future_values)
